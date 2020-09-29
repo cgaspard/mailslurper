@@ -27,8 +27,6 @@ const (
 
 	// Set to true while developing
 	DEBUG_ASSETS bool = false
-
-	CONFIGURATION_FILE_NAME string = "config.json"
 )
 
 var config *mailslurper.Configuration
@@ -45,18 +43,24 @@ var cacheService *cache.Cache
 var admin *echo.Echo
 var service *echo.Echo
 
-var logFormat = flag.String("logformat", "simple", "Format for logging. 'simple' or 'json'.")
-var logLevel = flag.String("loglevel", "info", "Level of logs to write. Valid values are 'debug', 'info', or 'error'.")
+type Environment struct {
+	LogFormat  string
+	LogLevel   string
+	ConfigPath string
+}
+
+var env Environment
 
 func main() {
 	var err error
-	flag.Parse()
 
-	logger = mailslurper.GetLogger(*logLevel, *logFormat, "MailSlurper")
+	parseArgs()
+
+	logger = mailslurper.GetLogger(env.LogLevel, env.LogFormat, "MailSlurper")
 	logger.Infof("Starting MailSlurper Server v%s", SERVER_VERSION)
 
 	renderer = ui.NewTemplateRenderer(DEBUG_ASSETS)
-	setupConfig()
+	setupConfig(env.ConfigPath)
 
 	if err = config.Validate(); err != nil {
 		logger.WithError(err).Fatalf("Invalid configuration")
@@ -96,4 +100,34 @@ func main() {
 	if err = service.Shutdown(ctx); err != nil {
 		logger.Fatalf("Error shutting down service listener: %s", err.Error())
 	}
+}
+
+func parseArgs() {
+
+	paramLogFormat := "logformat"
+	paramLogLevel := "loglevel"
+	paramConfigPath := "configpath"
+
+	envLogFormat := os.Getenv(paramLogFormat)
+	envLogLevel := os.Getenv(paramLogLevel)
+	envConfigPath := os.Getenv(paramConfigPath)
+
+	flag.StringVar(&env.LogFormat, paramLogFormat, "simple", "Format for logging. 'simple' or 'json'.")
+	flag.StringVar(&env.LogLevel, paramLogLevel, "info", "Level of logs to write. Valid values are 'debug', 'info', or 'error'.")
+	flag.StringVar(&env.ConfigPath, paramConfigPath, "config.json", "Path to config.json")
+
+	flag.Parse()
+
+	if len(envLogFormat) > 0 {
+		env.LogFormat = envLogFormat
+	}
+
+	if len(envLogLevel) > 0 {
+		env.LogLevel = envLogLevel
+	}
+
+	if len(envConfigPath) > 0 {
+		env.ConfigPath = envConfigPath
+	}
+
 }

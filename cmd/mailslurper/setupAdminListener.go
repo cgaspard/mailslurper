@@ -17,7 +17,7 @@ import (
 	"github.com/mailslurper/mailslurper/pkg/mailslurper"
 )
 
-func setupAdminListener() {
+func setupAdminListener(configFile string) {
 	middlewares := make([]echo.MiddlewareFunc, 0, 5)
 
 	/*
@@ -26,7 +26,7 @@ func setupAdminListener() {
 	adminController := &controllers.AdminController{
 		CacheService:   cacheService,
 		Config:         config,
-		ConfigFileName: CONFIGURATION_FILE_NAME,
+		ConfigFileName: configFile,
 		DebugMode:      DEBUG_ASSETS,
 		Renderer:       renderer,
 		Lock:           &sync.Mutex{},
